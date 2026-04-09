@@ -126,7 +126,7 @@ void KE::VK::Swapchain::BuildSwapchain(uint32_t width, uint32_t height)
     }
 
     if (swapchainOutputSet_.GetSize() == 0)
-        swapchainOutputSet_ = ResourceSet::Create<SwapchainOutput>(FRAMEALIGNED, images_.size());
+        swapchainOutputSet_ = ResourceSet::Create<SwapchainOutput>(FRAMEALIGNED, (u32)images_.size());
 
     for (int i = 0; i < images_.size(); i++)
     {

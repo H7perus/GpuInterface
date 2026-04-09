@@ -1,0 +1,14 @@
+cmake_install.cmake
+cmake_install.cmake
+GpuInterface.vcxproj
+GpuInterface.vcxproj.filters
+
+*.obj*
+*.dd*
+*.json
+*.tlog
+*.pdb
+*.stamp
+
+CMakeFiles/generate.stamp.depend
+cmake_install.cmake
