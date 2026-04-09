@@ -1,0 +1,19 @@
+#version 460
+#extension GL_EXT_descriptor_heap : require
+#extension GL_EXT_nonuniform_qualifier : require
+
+layout(descriptor_heap) buffer TestBuffer {
+    int val[];
+} testBuffer[];
+
+
+layout(push_constant) uniform PushConstants
+{
+    int bufferIndex;
+} pc;
+
+layout(local_size_x = 64) in;
+void main()
+{
+    testBuffer[pc.bufferIndex].val[gl_GlobalInvocationID.x] = int(gl_GlobalInvocationID.x); //int(gl_LocalInvocationID.x);
+}
