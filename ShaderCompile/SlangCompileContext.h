@@ -3,11 +3,13 @@
 #include "slang-com-ptr.h"
 #include "slang-com-helper.h"
 
+#include "ShaderCompile.h"
 #include "SlangCompiledUnit.h"
 
 #include "GpuInterface.h"
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <array>
 
@@ -76,7 +78,7 @@ namespace KE::VK
 					{slang::CompilerOptionValueKind::String, 1, 0, "spvDescriptorHeapEXT", nullptr}
 
 				},
-				{ //Hardcoded for now. This might not play nicely with AMD GPUs, which is a bit annoying. If it becomes a serious issue we might have to make it a spirv specilisation constant.
+				{ //Hardcoded for now. This might not play nicely with AMD GPUs, which is a bit annoying. If it becomes a serious issue we might have to make it a spirv specialisation constant.
 					slang::CompilerOptionName::SPIRVResourceHeapStride,
 					{slang::CompilerOptionValueKind::Int, 32, 0, nullptr, nullptr}
 
@@ -163,7 +165,7 @@ namespace KE::VK
 			unsigned registerIndex = 0;
 
 			diagnoseIfNeeded(diagnosticsBlob);
-			composedProgram->getTargetCode(0, spirvCode.writeRef());
+			SlangResult result1 = composedProgram->getTargetCode(0, spirvCode.writeRef());
 
 			std::cout << "Compiled " << spirvCode->getBufferSize() << " bytes of SPIR-V" << std::endl;
 

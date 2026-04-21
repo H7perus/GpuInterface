@@ -1,5 +1,6 @@
 #include "PipelineCompute.h"
 #include "DeviceManager.h"
+#include "vulkan/vulkan.hpp"
 
 KE::VK::PipelineCompute::PipelineCompute(u32 deviceIndex, std::vector<uint32_t> spirv)
 {
@@ -49,10 +50,33 @@ KE::VK::PipelineCompute::PipelineCompute(u32 deviceIndex, SlangCompiledUnit shad
     vk::PipelineCreateFlags2CreateInfo flags2Info;
     flags2Info.flags = vk::PipelineCreateFlagBits2::eDescriptorHeapEXT;
 
+    // MAPPINGS, SO I CAN USE DESCRIPTOR HEAPS WITH NEURAL INFERENCE
+    vk::DescriptorSetAndBindingMappingEXT mapping;
+    mapping.descriptorSet             = 0;
+    mapping.firstBinding              = 0;
+    mapping.bindingCount              = 4;
+    mapping.resourceMask              = vk::SpirvResourceTypeFlagBitsEXT::eAll;
+    mapping.source                    = vk::DescriptorMappingSourceEXT::eHeapWithConstantOffset;
+    mapping.sourceData.constantOffset = {
+        .heapOffset      = 3024 * 32, // byte offset of binding 0 in the heap
+        .heapArrayStride = 32         // each subsequent binding steps by this
+    };
+
+    vk::ShaderDescriptorSetAndBindingMappingInfoEXT mappingInfo;
+    mappingInfo.pNext        = nullptr;
+    mappingInfo.mappingCount = 1;
+    mappingInfo.pMappings    = &mapping;
+
+
+    //MAPPINGS END!
+
     vk::ComputePipelineCreateInfo pipelineInfo;
-    pipelineInfo.pNext  = &flags2Info;
-    pipelineInfo.stage  = shaderStageInfo;
-    pipelineInfo.layout = VK_NULL_HANDLE; // from previous step
+    pipelineInfo.pNext       = &flags2Info;
+    pipelineInfo.stage       = shaderStageInfo;
+    pipelineInfo.stage.pNext = &mappingInfo;
+    pipelineInfo.layout      = VK_NULL_HANDLE; // from previous step
+
+
 
     auto result = device.createComputePipeline(nullptr, pipelineInfo);
 

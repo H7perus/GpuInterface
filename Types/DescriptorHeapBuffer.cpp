@@ -56,17 +56,8 @@ i32 DescriptorHeapBuffer::EnterResourceDescriptor(vk::ResourceDescriptorInfoEXT*
     dest.address = (char*)map() + index * descriptorSize_;
     dest.size    = descriptorSize_;
 
-
-    std::cout << "BEFORE: " << std::endl;
-    for(int i = 0; i < 64; i++)
-        std::cout << std::dec << (i32)((u8*)dest.address)[i] << std::endl;
-
     auto result = ((vk::Device)(device)).writeResourceDescriptorsEXT(1, descriptor, &dest);
 
-
-    std::cout << "AFTER: " << std::endl;
-    for(int i = 0; i < 64; i++)
-        std::cout << std::dec << (i32)((u8*)dest.address)[i] << std::endl;
 
     unmap();
     return index;
