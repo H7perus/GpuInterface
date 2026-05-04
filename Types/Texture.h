@@ -39,6 +39,11 @@ class GPUI_DLL_API Texture : public IResource
 
     void UploadPixels(const void* pixelData);
 
+    vk::Image& GetVkImage()
+    {
+      return image_;
+    }
+
     // Methods for creating, managing, and destroying the texture would go here
 };
 

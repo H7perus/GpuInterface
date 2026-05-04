@@ -56,7 +56,6 @@ void KE::VK::Swapchain::EndFrame()
                       vk::ImageLayout::ePresentSrcKHR);
     cmd.end();
     vk::SubmitInfo submitInfo{};
-    submitInfo.waitSemaphoreCount    = 1;
     vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     submitInfo.pWaitDstStageMask     = &waitStage;
     submitInfo.waitSemaphoreCount    = 1;
@@ -68,6 +67,7 @@ void KE::VK::Swapchain::EndFrame()
 
     graphicsQueue_.submit(submitInfo, frames_[currentFrame_].inFlightFence_);
 
+
     vk::PresentInfoKHR presentInfo{};
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores    = &frames_[currentFrame_].renderFinishedSemaphore_;
@@ -75,13 +75,16 @@ void KE::VK::Swapchain::EndFrame()
     presentInfo.pSwapchains        = &swapchain_;
     presentInfo.pImageIndices      = &currentImage_;
 
+    vk::Result result;
     try
     {
-        graphicsQueue_.presentKHR(presentInfo);
+        result = graphicsQueue_.presentKHR(presentInfo);
     }
     catch (vk::OutOfDateKHRError&)
     {
     }
+
+    //graphicsQueue_.waitIdle();
     currentFrame_ = (currentFrame_ + 1) % frames_.size();
 }
 

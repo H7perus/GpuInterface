@@ -3,10 +3,11 @@
 #include <iostream>
 #include <optional>
 
-#include "VkBootstrap.h"
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-#include <vulkan/vulkan.hpp>
 
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
+#include <vulkan/vulkan.hpp>
+#include "VkBootstrap.h"
 
 #include "GpuInterface/BasicTypeAliases.h"
 #include "SDL3/SDL_vulkan.h"
@@ -23,7 +24,7 @@ void GPUI_DLL_API InitDispatcherForDLL(vk::Instance instance);
 inline vkb::Instance createInstance()
 {
     u32 count;
-    // SDL_Vulkan_GetInstanceExtensions(&count);
+    SDL_Vulkan_GetInstanceExtensions(&count);
     vkb::Instance        vkb_inst_;
     vkb::InstanceBuilder builder;
     try
@@ -35,7 +36,7 @@ inline vkb::Instance createInstance()
                 .enable_validation_layers()
                 //.add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
                 //.add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT)
-                //.use_default_debug_messenger()
+                .use_default_debug_messenger()
                 .build();
         if (!inst_ret)
         {
@@ -75,10 +76,14 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst, vk::SurfaceKHR surface)
 {
     vkb::PhysicalDeviceSelector selector{vkb_inst};
     auto                        phys_ret = selector //.set_surface(NULL)
+                                               .add_required_extension("VK_KHR_swapchain")
                                                .add_required_extension("VK_EXT_descriptor_heap")
                                                .add_required_extension("VK_KHR_shader_untyped_pointers")
                                                .add_required_extension("VK_EXT_vertex_input_dynamic_state")
                                                .add_required_extension("VK_NV_cooperative_vector")
+                                               .add_required_extension("VK_EXT_shader_atomic_float")
+                                               .add_required_extension("VK_EXT_device_fault")
+                                               .add_required_extension("VK_EXT_shader_replicated_composites")
                                                .set_minimum_version(1, 4)
                                                .require_present(true)
                                                .set_surface(surface)
@@ -106,19 +111,39 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst, vk::SurfaceKHR surface)
     features12.bufferDeviceAddress    = VK_TRUE;
     features12.runtimeDescriptorArray = VK_TRUE;
     features12.shaderInt8             = VK_TRUE;
+    features12.shaderFloat16          = VK_TRUE;
+    features12.vulkanMemoryModel      = VK_TRUE;
+
+    vk::PhysicalDeviceVulkan11Features features11;
+    features11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
+    features11.storageBuffer16BitAccess           = VK_TRUE;
+
 
     vk::PhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeatures;
-    cooperativeVectorFeatures.cooperativeVector = VK_TRUE;
+    cooperativeVectorFeatures.cooperativeVector         = VK_TRUE;
+    cooperativeVectorFeatures.cooperativeVectorTraining = VK_TRUE;
+
+    vk::PhysicalDeviceShaderAtomicFloat2FeaturesEXT float2feat;
+    
+    float2feat.shaderBufferFloat16AtomicAdd = VK_TRUE;
+    float2feat.shaderSharedFloat16AtomicAdd = VK_TRUE;
+
+    vk::PhysicalDeviceShaderReplicatedCompositesFeaturesEXT compFeatEXT;
+    compFeatEXT.shaderReplicatedComposites = true;
+    
 
     vkb::DeviceBuilder device_builder{phys_ret.value()};
-    auto               dev_ret = device_builder.add_pNext(&features12)
+    auto               dev_ret = device_builder.add_pNext(&features11)
+                                     .add_pNext(&features12)
                                      .add_pNext(&features13)
                                      .add_pNext(&descHeapFeatures)
                                      .add_pNext(&untypedPtrFeatures) // also need this one
                                      .add_pNext(&vertexInputDynamicStateFeat)
                                      .add_pNext(&cooperativeVectorFeatures)
+                                     .add_pNext(&float2feat)
+                                     .add_pNext(&compFeatEXT)
                                      //.enable_extension("VK_EXT_descriptor_heap")
-                       //.enable_extension("VK_KHR_shader_untyped_pointers")
+                                     //.enable_extension("VK_KHR_shader_untyped_pointers")
                        //.add_pNext(&DynamicStateFeat)
                        .build();
     if (!dev_ret)
@@ -155,11 +180,11 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst)
     features11.uniformAndStorageBuffer16BitAccess = true;
 
     vk::PhysicalDeviceVulkan12Features features12;
-    features12.bufferDeviceAddress    = true;
-    features12.runtimeDescriptorArray = true;
-    features12.shaderInt8             = true;
-    features12.vulkanMemoryModel      = true;
-    features12.shaderFloat16          = true;
+    features12.bufferDeviceAddress               = true;
+    features12.runtimeDescriptorArray            = true;
+    features12.shaderInt8                        = true;
+    features12.vulkanMemoryModel                 = true;
+    features12.shaderFloat16                     = true;
     features12.uniformAndStorageBuffer8BitAccess = true;
 
     vk::PhysicalDeviceVulkan13Features features13;
@@ -179,6 +204,7 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst)
     vk::PhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeatures;
     cooperativeVectorFeatures.cooperativeVector = true;
 
+
     vk::PhysicalDevice16BitStorageFeatures storageBuffer16BitStorageFeatures;
     storageBuffer16BitStorageFeatures.storageBuffer16BitAccess = true;
 
@@ -192,7 +218,7 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst)
                                      .add_pNext(&cooperativeVectorFeatures)
                                      .add_pNext(&storageBuffer16BitStorageFeatures)
                                      //.enable_extension("VK_EXT_descriptor_heap")
-                       //.enable_extension("VK_KHR_shader_untyped_pointers")
+                                     //.enable_extension("VK_KHR_shader_untyped_pointers")
                        //.add_pNext(&DynamicStateFeat)
                        .build();
     if (!dev_ret)

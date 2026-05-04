@@ -42,7 +42,8 @@ KE::VK::Texture::Texture(u32 deviceIndex, uint32_t width, uint32_t height, vk::F
     
 
     imageDescriptorInfo_.pView  = &viewInfo_;
-    imageDescriptorInfo_.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    //TODO: maybe read optimal instead? testing something in regards to texture writes!
+    imageDescriptorInfo_.layout = vk::ImageLayout::eGeneral;
 
     if (sendToHeap)
     {
@@ -65,6 +66,9 @@ void KE::VK::Texture::UploadPixels(const void* pixelData)
     // 1. Create staging buffer
 
     u32 size = imageInfo_.extent.width * imageInfo_.extent.height * imageInfo_.extent.depth * 4;
+
+    if(imageInfo_.format == vk::Format::eR16G16B16A16Sfloat)
+        size *= 2;
 
     vk::BufferCreateInfo stagingInfo{};
     stagingInfo.size        = size;

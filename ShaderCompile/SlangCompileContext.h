@@ -67,7 +67,7 @@ namespace KE::VK
 
 			sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
 
-			std::array<slang::CompilerOptionEntry, 3> options =
+			std::array<slang::CompilerOptionEntry, 4> options =
 			{ {
 				{
 					slang::CompilerOptionName::EmitSpirvDirectly,
@@ -82,6 +82,10 @@ namespace KE::VK
 					slang::CompilerOptionName::SPIRVResourceHeapStride,
 					{slang::CompilerOptionValueKind::Int, 32, 0, nullptr, nullptr}
 
+				},
+				{
+					slang::CompilerOptionName::DebugInformation,
+					{slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
 				}
 			} };
 
@@ -165,11 +169,12 @@ namespace KE::VK
 			unsigned registerIndex = 0;
 
 			diagnoseIfNeeded(diagnosticsBlob);
-			SlangResult result1 = composedProgram->getTargetCode(0, spirvCode.writeRef());
+			SlangResult result1 = shaderModule->getTargetCode(0, spirvCode.writeRef(), diagnosticsBlob.writeRef());
+			diagnoseIfNeeded(diagnosticsBlob);
 
 			std::cout << "Compiled " << spirvCode->getBufferSize() << " bytes of SPIR-V" << std::endl;
 
-			return SlangCompiledUnit(composedProgram);
+			return SlangCompiledUnit(Slang::ComPtr<slang::IComponentType>(shaderModule));
 		}
 	};
 }

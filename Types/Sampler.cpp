@@ -5,8 +5,8 @@
 
 KE::VK::Sampler::Sampler(u32 deviceIndex, bool addToHeap) : deviceIndex_(deviceIndex)
 {
-    samplerInfo_.magFilter        = vk::Filter::eNearest;
-    samplerInfo_.minFilter        = vk::Filter::eNearest;
+    samplerInfo_.magFilter        = vk::Filter::eLinear;
+    samplerInfo_.minFilter        = vk::Filter::eLinear;
     samplerInfo_.mipmapMode       = vk::SamplerMipmapMode::eLinear;
     samplerInfo_.addressModeU     = vk::SamplerAddressMode::eRepeat;
     samplerInfo_.addressModeV     = vk::SamplerAddressMode::eRepeat;

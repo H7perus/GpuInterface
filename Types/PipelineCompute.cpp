@@ -54,7 +54,7 @@ KE::VK::PipelineCompute::PipelineCompute(u32 deviceIndex, SlangCompiledUnit shad
     vk::DescriptorSetAndBindingMappingEXT mapping;
     mapping.descriptorSet             = 0;
     mapping.firstBinding              = 0;
-    mapping.bindingCount              = 4;
+    mapping.bindingCount              = 10;
     mapping.resourceMask              = vk::SpirvResourceTypeFlagBitsEXT::eAll;
     mapping.source                    = vk::DescriptorMappingSourceEXT::eHeapWithConstantOffset;
     mapping.sourceData.constantOffset = {
