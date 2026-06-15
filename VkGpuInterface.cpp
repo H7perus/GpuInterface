@@ -70,25 +70,25 @@ void KE::VkGpuInterface::Init()
     KE::VK::SlangCompileContext compileContext;
 
     SlangCompiledUnit slangShader =
-        compileContext.CompileShaderPath("../../../../../../Engine/src/GpuInterface/shaders/slangcompute.slang");
+        compileContext.CompileShaderPath("../../../../../Engine/src/GpuInterface/shaders/slangcompute.slang");
 
     SlangCompiledUnit slangGraphicsShader =
-        compileContext.CompileShaderPath("../../../../../../Engine/src/GpuInterface/shaders/combinedVertFrag.slang");
+        compileContext.CompileShaderPath("../../../../../Engine/src/GpuInterface/shaders/combinedVertFrag.slang");
 
 
     Slang::ComPtr<slang::IBlob> blob = slangGraphicsShader.getTargetCode();
 
     auto glslComputeSpv =
-        CompileGlslShader("../../../../../../Engine/src/GpuInterface/shaders/glslcompute.comp", shaderc_compute_shader);
+        CompileGlslShader("../../../../../Engine/src/GpuInterface/shaders/glslcompute.comp", shaderc_compute_shader);
     std::ofstream file("spvDescriptorHeapTEST2.spv", std::ios::binary);
     file.write((char*)blob.get()->getBufferPointer(), blob.get()->getBufferSize());
     file.close();
 
 
     auto vertTest =
-        CompileGlslShader("../../../../../../Engine/src/GpuInterface/shaders/glsl.vert", shaderc_vertex_shader);
+        CompileGlslShader("../../../../../Engine/src/GpuInterface/shaders/glsl.vert", shaderc_vertex_shader);
     auto fragTest =
-        CompileGlslShader("../../../../../../Engine/src/GpuInterface/shaders/glsl.frag", shaderc_fragment_shader);
+        CompileGlslShader("../../../../../Engine/src/GpuInterface/shaders/glsl.frag", shaderc_fragment_shader);
 
     KE::VK::PipelineCompute pipeline(0, slangShader);
 

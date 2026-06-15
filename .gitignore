@@ -11,4 +11,5 @@ GpuInterface.vcxproj.filters
 *.stamp
 
 CMakeFiles/generate.stamp.depend
+
 cmake_install.cmake
