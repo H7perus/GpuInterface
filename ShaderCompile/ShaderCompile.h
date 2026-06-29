@@ -14,11 +14,11 @@
 #include <fstream>
 #include <filesystem>
 
-Slang::ComPtr<slang::IGlobalSession> globalSession;
-Slang::ComPtr<slang::ISession> session;
-slang::SessionDesc sessionDesc;
+//Slang::ComPtr<slang::IGlobalSession> globalSession;
+//Slang::ComPtr<slang::ISession> session;
+//slang::SessionDesc sessionDesc;
 
-Slang::ComPtr<slang::IBlob> spirvCode;
+//Slang::ComPtr<slang::IBlob> spirvCode;
 
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -40,7 +40,7 @@ static std::vector<char> readFile(const std::string& filename) {
 
 }
 
-void diagnoseIfNeeded(slang::IBlob* diagnosticsBlob)
+inline void diagnoseIfNeeded(slang::IBlob* diagnosticsBlob)
 {
     if (diagnosticsBlob != nullptr)
     {
@@ -49,151 +49,151 @@ void diagnoseIfNeeded(slang::IBlob* diagnosticsBlob)
     }
 }
 
-void ShaderCompileSetup()
-{
-	createGlobalSession(globalSession.writeRef());
-	slang::TargetDesc targetDesc = {};
-	targetDesc.format = SLANG_SPIRV;
-	targetDesc.profile = globalSession->findProfile("spirv_1_6");
+// void ShaderCompileSetup()
+// {
+// 	createGlobalSession(globalSession.writeRef());
+// 	slang::TargetDesc targetDesc = {};
+// 	targetDesc.format = SLANG_SPIRV;
+// 	targetDesc.profile = globalSession->findProfile("spirv_1_6");
 
-	sessionDesc.targetCount = 1;
-	sessionDesc.targets = &targetDesc;
+// 	sessionDesc.targetCount = 1;
+// 	sessionDesc.targets = &targetDesc;
     
-    sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+//     sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
 
-    std::array<slang::CompilerOptionEntry, 1> options =
-    {
-        {
-            slang::CompilerOptionName::EmitSpirvDirectly,
-            {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
-        }
-    };
+//     std::array<slang::CompilerOptionEntry, 1> options =
+//     {
+//         {
+//             slang::CompilerOptionName::EmitSpirvDirectly,
+//             {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
+//         }
+//     };
 
-    sessionDesc.compilerOptionEntries = options.data();
-    sessionDesc.compilerOptionEntryCount = options.size();
+//     sessionDesc.compilerOptionEntries = options.data();
+//     sessionDesc.compilerOptionEntryCount = options.size();
 
 	
-	globalSession->createSession(sessionDesc, session.writeRef());
-}
+// 	globalSession->createSession(sessionDesc, session.writeRef());
+// }
 
 
-void CompileShader(std::string path)
-{
-    auto rawSource = readFile(path);
-    rawSource.push_back('\0');
-    const char* shaderSource = rawSource.data();
+// void CompileShader(std::string path)
+// {
+//     auto rawSource = readFile(path);
+//     rawSource.push_back('\0');
+//     const char* shaderSource = rawSource.data();
 
-    Slang::ComPtr<slang::IModule> testmod;
-    Slang::ComPtr<slang::IModule> slangModule;
+//     Slang::ComPtr<slang::IModule> testmod;
+//     Slang::ComPtr<slang::IModule> slangModule;
 
-    {
-        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-        //need this if we have named modules, but we don't :^)
-        //const char* moduleName = "combined";
-        //const char* modulePath = "combined.slang";
-        //testmod = session->loadModule("testmod"); //loadModuleFromSourceString(0, 0, shaderSource, diagnosticsBlob.writeRef());
+//     {
+//         Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+//         //need this if we have named modules, but we don't :^)
+//         //const char* moduleName = "combined";
+//         //const char* modulePath = "combined.slang";
+//         //testmod = session->loadModule("testmod"); //loadModuleFromSourceString(0, 0, shaderSource, diagnosticsBlob.writeRef());
 
-        slangModule = session->loadModule(path.c_str(), diagnosticsBlob.writeRef()); //loadModuleFromSourceString(0, 0, shaderSource, diagnosticsBlob.writeRef());
+//         slangModule = session->loadModule(path.c_str(), diagnosticsBlob.writeRef()); //loadModuleFromSourceString(0, 0, shaderSource, diagnosticsBlob.writeRef());
 
-        //std::cout << shaderSource << std::endl;
-        diagnoseIfNeeded(diagnosticsBlob);
-        if (!slangModule)
-        {
-            std::cerr << "Failed on module!" << std::endl;
+//         //std::cout << shaderSource << std::endl;
+//         diagnoseIfNeeded(diagnosticsBlob);
+//         if (!slangModule)
+//         {
+//             std::cerr << "Failed on module!" << std::endl;
             
-            return;
-        }
-    }
+//             return;
+//         }
+//     }
 
 
-    std::array<slang::IComponentType*, 1> componentTypes = { slangModule.get()};
-    Slang::ComPtr<slang::IComponentType> composedProgram;
+//     std::array<slang::IComponentType*, 1> componentTypes = { slangModule.get()};
+//     Slang::ComPtr<slang::IComponentType> composedProgram;
 
 
 
-    {
-        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+//     {
+//         Slang::ComPtr<slang::IBlob> diagnosticsBlob;
 
-        SlangResult result = session->createCompositeComponentType(
-            componentTypes.data(),
-            (int)componentTypes.size(),
-            composedProgram.writeRef(),
-            diagnosticsBlob.writeRef()
-        );
-        diagnoseIfNeeded(diagnosticsBlob);
-        if (SLANG_FAILED(result))
-        {
-            std::cerr << "Failed to compose component type." << std::endl;
-            return;
-        }
-    }
-    {
-        auto layout = composedProgram->getLayout();
+//         SlangResult result = session->createCompositeComponentType(
+//             componentTypes.data(),
+//             (int)componentTypes.size(),
+//             composedProgram.writeRef(),
+//             diagnosticsBlob.writeRef()
+//         );
+//         diagnoseIfNeeded(diagnosticsBlob);
+//         if (SLANG_FAILED(result))
+//         {
+//             std::cerr << "Failed to compose component type." << std::endl;
+//             return;
+//         }
+//     }
+//     {
+//         auto layout = composedProgram->getLayout();
 
-        auto globalParams = layout->getGlobalParamsTypeLayout();
+//         auto globalParams = layout->getGlobalParamsTypeLayout();
         
-        int fieldCount = globalParams->getFieldCount();
+//         int fieldCount = globalParams->getFieldCount();
         
-        for (unsigned i = 0; i < fieldCount; i++)
-        {
-            slang::VariableLayoutReflection* field = globalParams->getFieldByIndex(i);
+//         for (unsigned i = 0; i < fieldCount; i++)
+//         {
+//             slang::VariableLayoutReflection* field = globalParams->getFieldByIndex(i);
 
-            const char* name = field->getVariable()->getName();
-            slang::TypeLayoutReflection* typeLayout = field->getTypeLayout();
-            slang::TypeReflection* type = typeLayout->getType();
+//             const char* name = field->getVariable()->getName();
+//             slang::TypeLayoutReflection* typeLayout = field->getTypeLayout();
+//             slang::TypeReflection* type = typeLayout->getType();
 
-            // Get binding information
-            unsigned binding = field->getBindingIndex();
-            unsigned space = field->getBindingSpace();
+//             // Get binding information
+//             unsigned binding = field->getBindingIndex();
+//             unsigned space = field->getBindingSpace();
 
-            // Check what kind of resource this is
-            slang::TypeReflection::Kind kind = type->getKind();
+//             // Check what kind of resource this is
+//             slang::TypeReflection::Kind kind = type->getKind();
 
-            switch (kind) {
-            case slang::TypeReflection::Kind::ConstantBuffer:
-                printf("ConstantBuffer: %s, binding=%d, space=%d\n", name, binding, space);
-                break;
+//             switch (kind) {
+//             case slang::TypeReflection::Kind::ConstantBuffer:
+//                 printf("ConstantBuffer: %s, binding=%d, space=%d\n", name, binding, space);
+//                 break;
 
-            case slang::TypeReflection::Kind::Resource:
-            {
-                // Check resource shape/type
-                SlangResourceShape shape = type->getResourceShape();
-                SlangResourceAccess access = type->getResourceAccess();
+//             case slang::TypeReflection::Kind::Resource:
+//             {
+//                 // Check resource shape/type
+//                 SlangResourceShape shape = type->getResourceShape();
+//                 SlangResourceAccess access = type->getResourceAccess();
 
-                slang::TypeReflection* resourceResultType = type->getResourceResultType();
+//                 slang::TypeReflection* resourceResultType = type->getResourceResultType();
 
-                if (shape & SLANG_TEXTURE_COMBINED_FLAG && (shape & SLANG_TEXTURE_2D)) {
-                    printf("Texture2D: %s, binding=%d, space=%d, type=%s\n", name, binding, space, resourceResultType->getName());
-                }
-                else if (shape == SLANG_STRUCTURED_BUFFER) {
-                    ISlangBlob* fullName;
+//                 if (shape & SLANG_TEXTURE_COMBINED_FLAG && (shape & SLANG_TEXTURE_2D)) {
+//                     printf("Texture2D: %s, binding=%d, space=%d, type=%s\n", name, binding, space, resourceResultType->getName());
+//                 }
+//                 else if (shape == SLANG_STRUCTURED_BUFFER) {
+//                     ISlangBlob* fullName;
 
-                    type->getFullName(&fullName);
-                    printf("StructuredBuffer: %s, binding=%d, space=%d, type=%s\n", name, binding, space, resourceResultType->getName());
-                }
-                else
-                {
-                    printf("resource is neither :(\n");
-                }
-                break;
-            }
-            case slang::TypeReflection::Kind::SamplerState:
-                printf("SamplerState: %s, binding=%d, space=%d\n", name, binding, space);
-                break;
+//                     type->getFullName(&fullName);
+//                     printf("StructuredBuffer: %s, binding=%d, space=%d, type=%s\n", name, binding, space, resourceResultType->getName());
+//                 }
+//                 else
+//                 {
+//                     printf("resource is neither :(\n");
+//                 }
+//                 break;
+//             }
+//             case slang::TypeReflection::Kind::SamplerState:
+//                 printf("SamplerState: %s, binding=%d, space=%d\n", name, binding, space);
+//                 break;
 
-            case slang::TypeReflection::Kind::Struct:
-                printf("Uniform/Push Constant: %s\n", name);
-                break;
-            }
-        }
-			Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-			SlangResult result = composedProgram->getTargetCode(0, spirvCode.writeRef());
-        diagnoseIfNeeded(diagnosticsBlob);
-        if (SLANG_FAILED(result))
-        {
-            std::cerr << "Failed to compile to SPIR-V." << std::endl;
-            return;
-        }
-    }
-    std::cout << "Compiled " << spirvCode->getBufferSize() << " bytes of SPIR-V" << std::endl;
-}
+//             case slang::TypeReflection::Kind::Struct:
+//                 printf("Uniform/Push Constant: %s\n", name);
+//                 break;
+//             }
+//         }
+// 			Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+// 			SlangResult result = composedProgram->getTargetCode(0, spirvCode.writeRef());
+//         diagnoseIfNeeded(diagnosticsBlob);
+//         if (SLANG_FAILED(result))
+//         {
+//             std::cerr << "Failed to compile to SPIR-V." << std::endl;
+//             return;
+//         }
+//     }
+//     std::cout << "Compiled " << spirvCode->getBufferSize() << " bytes of SPIR-V" << std::endl;
+// }
