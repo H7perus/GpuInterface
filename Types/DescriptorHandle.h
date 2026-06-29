@@ -15,12 +15,14 @@ namespace KE::VK
         u32 resourceIndex_ = 0;
         u32 samplerIndex_ = 0;
     public:
+        DescriptorHandle() = default;
+
         DescriptorHandle(u32 resourceIndex, u32 samplerIndex)
             : resourceIndex_(resourceIndex), samplerIndex_(samplerIndex) {}
 
-        DescriptorHandle(KE::VK::Buffer buffer) : resourceIndex_(buffer.resourceHeapIndex_) {}
+        DescriptorHandle(KE::VK::Buffer& buffer) : resourceIndex_(buffer.resourceHeapIndex_) {}
         
-        DescriptorHandle(KE::VK::Texture texture, KE::VK::Sampler sampler) : resourceIndex_(texture.resourceHeapIndex_), samplerIndex_(sampler.samplerHeapIndex_) {}
+        DescriptorHandle(KE::VK::Texture& texture, KE::VK::Sampler& sampler) : resourceIndex_(texture.resourceHeapIndex_), samplerIndex_(sampler.samplerHeapIndex_) {}
 
 
         

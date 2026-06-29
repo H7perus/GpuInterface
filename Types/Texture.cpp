@@ -52,10 +52,8 @@ KE::VK::Texture::Texture(u32 deviceIndex, uint32_t width, uint32_t height, vk::F
         descriptor.type                          = vk::DescriptorType::eSampledImage;
         resourceHeapIndex_                       = device.EnterResourceDescriptor(&descriptor);
     }
-    else
-    {
-        imageView_ = device.GetVkDevice().createImageView(viewInfo_);
-    }
+    imageView_ = device.GetVkDevice().createImageView(viewInfo_);
+
 }
 
 void KE::VK::Texture::UploadPixels(const void* pixelData)

@@ -59,9 +59,17 @@ Buffer::Buffer(u32 deviceIndex, vk::DeviceSize size, vk::BufferUsageFlags usage,
 
     if (sendToHeap)
     {
+
+        auto descriptorType = vk::DescriptorType::eStorageBuffer;
+
+        if(usage & vk::BufferUsageFlagBits::eUniformBuffer)
+        {
+            descriptorType = vk::DescriptorType::eUniformBuffer;
+        }
+
         vk::ResourceDescriptorInfoEXT descriptor = {};
         descriptor.data                          = &addressRange_;
-        descriptor.type                          = vk::DescriptorType::eStorageBuffer;
+        descriptor.type                          = descriptorType;
         resourceHeapIndex_ = ContextManager::GetDevice(deviceIndex).EnterResourceDescriptor(&descriptor);
     }
 }

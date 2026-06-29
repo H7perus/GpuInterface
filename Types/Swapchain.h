@@ -47,6 +47,11 @@ namespace KE::VK
 
         InflightFrame &BeginNextFrame();
 
+        u32 GetCurrentFrameIndex()
+        {
+            return currentFrame_;
+        }
+
         vk::Image GetCurrentImage()
         {
             return images_[currentImage_];

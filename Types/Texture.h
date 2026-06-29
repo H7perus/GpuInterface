@@ -44,6 +44,16 @@ class GPUI_DLL_API Texture : public IResource
       return image_;
     }
 
+    vk::ImageView& GetVkImageView()
+    {
+      return imageView_;
+    }
+
+    u32 GetResourceHeapIndex()
+    {
+      return resourceHeapIndex_;
+    }
+
     // Methods for creating, managing, and destroying the texture would go here
 };
 
