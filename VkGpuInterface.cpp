@@ -92,7 +92,9 @@ void KE::VkGpuInterface::Init()
 
     KE::VK::PipelineCompute pipeline(0, slangShader);
 
-    testPipeline = KE::VK::PipelineGraphics(0, slangGraphicsShader);
+    auto specializedShader = slangGraphicsShader.Specialise();
+    
+    testPipeline = KE::VK::PipelineGraphics(0, specializedShader);
     // testPipeline = KE::VK::PipelineGraphics(0, vertTest, fragTest);
 
     vertexBuffer = KE::VK::Buffer(0, sizeof(vertexInfo), vk::BufferUsageFlagBits::eVertexBuffer,

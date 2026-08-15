@@ -40,12 +40,12 @@ static std::vector<char> readFile(const std::string& filename) {
 
 }
 
-inline void diagnoseIfNeeded(slang::IBlob* diagnosticsBlob)
+inline void diagnoseIfNeeded(Slang::ComPtr<slang::IBlob>& diagnosticsBlob)
 {
     if (diagnosticsBlob != nullptr)
     {
         std::cout << std::hex << (const char*)diagnosticsBlob->getBufferPointer() << std::endl;
-        diagnosticsBlob->Release();
+        diagnosticsBlob.setNull();
     }
 }
 

@@ -4,15 +4,13 @@
 
 
 using namespace KE::VK;
-PipelineGraphics::PipelineGraphics(u32 deviceIndex, SlangCompiledUnit shader)
+PipelineGraphics::PipelineGraphics(u32 deviceIndex, SpecializedShader& shader)
 {
     vk::Device device = ContextManager::GetInstance().GetDevice(deviceIndex).GetVkDevice();
+    
     vk::ShaderModuleCreateInfo shaderModuleInfo;
-
-    Slang::ComPtr<slang::IBlob> SpirV = shader.getTargetCode();
-    shaderModuleInfo.codeSize = SpirV->getBufferSize();
-    shaderModuleInfo.pCode = reinterpret_cast<const uint32_t *>(SpirV->getBufferPointer());
-
+    shaderModuleInfo.codeSize = shader.spirv.size() * 4;
+    shaderModuleInfo.pCode = shader.spirv.data();
     vk::ShaderModule shaderModule = device.createShaderModule(shaderModuleInfo);
 
     vk::PipelineShaderStageCreateInfo vertexStageInfo;

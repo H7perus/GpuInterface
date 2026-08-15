@@ -8,31 +8,9 @@
 
 
 #include "../Types/Device.h"
-
-
-struct VertexInput
-{
-    std::string semanticName;
-    u32         semanticIndex;
-    vk::Format  format;
-    u32         location;
-};
-
-struct PushConstantParameter
-{
-    std::string name;
-    std::string type;
-    u32         offset;
-};
-
-// just supporting int right now
-struct CompileTimeConstant
-{
-    std::string name;
-    int         def = 0;
-    int         min = -1;
-    int         max = -1;
-};
+#include "GpuInterface/ShaderCompile/ShaderReflection.h"
+#include "GpuInterface/ShaderCompile/SpecialisedShader.h"
+#include <algorithm>
 
 // Intent: Maintain the composed program and provide helpers for reflection etc.
 
@@ -49,7 +27,6 @@ class SlangCompiledUnit
             entryPoints.push_back(Slang::ComPtr<slang::IEntryPoint>());
             module->getDefinedEntryPoint(i, entryPoints[i].writeRef());
         }
-
     };
 
 
@@ -62,18 +39,51 @@ class SlangCompiledUnit
     Slang::ComPtr<slang::IBlob> getTargetCode()
     {
         Slang::ComPtr<slang::IBlob> blob;
-        composedProgram->getTargetCode(0, blob.writeRef());
+        if (!module)
+            composedProgram->getTargetCode(0, blob.writeRef());
+        else
+        {
+            Slang::ComPtr<slang::IComponentType> composed;
+
+            std::vector<slang::IComponentType*> componentTypes(entryPoints.size() + 1);
+
+            componentTypes[0] = module.get();
+
+            for (int i = 0; i < entryPoints.size(); i++)
+            {
+                componentTypes[1 + i] = entryPoints[i].get();
+            }
+
+            // not using diagnostics here for now. Might become necessary in the future.
+            SlangResult result = module->getSession()->createCompositeComponentType(
+                componentTypes.data(), componentTypes.size(), composed.writeRef());
+
+            composed->getTargetCode(0, blob.writeRef());
+        }
+
         return blob;
     }
 
-    // TODO:
-    //  1. Reflection for vertex input
-
-    std::optional<std::vector<VertexInput>> ReflectOnVertexInput()
+    std::optional<std::vector<KE::VK::VertexInput>> GetVertexInputReflection()
     {
-        std::vector<VertexInput> result;
 
-        auto layout = module->getLayout(); // entry points will be present now
+
+        // not using diagnostics here for now. Might become necessary in the future.
+
+        if (composedProgram == nullptr)
+        {
+            std::vector<slang::IComponentType*> componentTypes(entryPoints.size() + 1);
+            for (int i = 0; i < entryPoints.size(); i++)
+            {
+                componentTypes[1 + i] = entryPoints[i].get();
+            }
+            componentTypes[0]         = module.get();
+            SlangResult resultCompose = module->getSession()->createCompositeComponentType(
+                componentTypes.data(), componentTypes.size(), composedProgram.writeRef());
+        }
+        std::vector<KE::VK::VertexInput> result;
+
+        auto layout = composedProgram->getLayout(); // entry points will be present now
 
 
         auto globalParamVarLayout = layout->getGlobalParamsTypeLayout();
@@ -86,12 +96,14 @@ class SlangCompiledUnit
 
         if (entryPointCount == 0)
         {
-            return std::optional<std::vector<VertexInput>>();
+            return std::optional<std::vector<KE::VK::VertexInput>>();
         }
 
+        // big fucking assumption that it is index 0
         slang::EntryPointLayout* entryPoint = layout->getEntryPointByIndex(0);
 
         SlangUInt paramCount = entryPoint->getParameterCount();
+
 
         for (SlangUInt i = 0; i < paramCount; i++)
         {
@@ -105,7 +117,7 @@ class SlangCompiledUnit
             {
                 if (paramCount > 1)
                 {
-                    return std::optional<std::vector<VertexInput>>();
+                    return std::optional<std::vector<KE::VK::VertexInput>>();
                 }
 
                 int elementCount = typeLayout->getFieldCount();
@@ -116,16 +128,16 @@ class SlangCompiledUnit
                     result.push_back(GetVertexParameterReflection(fieldLayoutRefl));
                 }
 
-                return std::optional<std::vector<VertexInput>>(result);
+                return std::optional<std::vector<KE::VK::VertexInput>>(result);
             }
 
             result.push_back(GetVertexParameterReflection(param));
         }
-        return std::optional<std::vector<VertexInput>>(result);
+        return std::optional<std::vector<KE::VK::VertexInput>>(result);
     }
 
   private:
-    VertexInput GetVertexParameterReflection(slang::VariableLayoutReflection* vertexParamRefl)
+    KE::VK::VertexInput GetVertexParameterReflection(slang::VariableLayoutReflection* vertexParamRefl)
     {
         const char* semantic    = vertexParamRefl->getSemanticName();
         u32         semanticIdx = vertexParamRefl->getSemanticIndex();
@@ -156,13 +168,16 @@ class SlangCompiledUnit
     }
 
   public:
-    // 2. Reflection for push constants.
-
-    std::optional<std::vector<PushConstantParameter>> ReflectOnPushConstants()
+    std::optional<std::vector<KE::VK::StructMember>> GetPushConstantReflection()
     {
-        std::vector<PushConstantParameter> result;
+        std::vector<KE::VK::StructMember> result;
 
-        auto layout = module->getLayout(); // entry points will be present now
+        slang::ProgramLayout* layout;
+
+        if (module == nullptr)
+            layout = composedProgram->getLayout();
+        else
+            layout = module->getLayout();
 
 
         auto globalParamVarLayout = layout->getGlobalParamsTypeLayout();
@@ -182,7 +197,7 @@ class SlangCompiledUnit
                 if (hasFoundPushConstants)
                 {
                     // TODO: This really needs some error handling. Its a bit whack rn.
-                    return std::optional<std::vector<PushConstantParameter>>();
+                    return std::optional<std::vector<KE::VK::StructMember>>();
                 }
                 hasFoundPushConstants = true;
             }
@@ -194,7 +209,7 @@ class SlangCompiledUnit
                 auto constantVarRefl    = elementLayout->getFieldByIndex(constantIdx);
                 auto constantTypeLayout = constantVarRefl->getTypeLayout();
 
-                auto kind = constantTypeLayout->getKind();
+                auto kind = constantTypeLayout->getType()->getKind();
 
 
                 std::string typeString;
@@ -212,7 +227,7 @@ class SlangCompiledUnit
                 u32         offset = constantVarRefl->getOffset();
                 std::string name   = constantVarRefl->getName();
 
-                PushConstantParameter param = {.name = name, .type = typeString, .offset = offset};
+                KE::VK::StructMember param = {.name = name, .type = typeString, .offset = offset};
 
                 result.push_back(param);
             }
@@ -220,21 +235,80 @@ class SlangCompiledUnit
         return result;
     }
 
-
-    // 3. Reflection for set constants (extern const int)
-    std::optional<std::vector<CompileTimeConstant>> ReflectOnCompileTimeConstants()
+    // OVERHAUL: This is a rather temporary solution
+    std::optional<std::vector<KE::VK::StructMember>> GetMaterialParameterReflection()
     {
-        std::vector<CompileTimeConstant> result;
-        int constantCount = module->getModuleReflection()->getChildrenCount();
+        std::vector<KE::VK::StructMember> result;
+        bool                              hasMaterialParamStruct = false;
 
-        for(int i = 0; i < constantCount; i++)
+        slang::TypeLayoutReflection* globalVarLayout;
+        if (module == nullptr)
+            globalVarLayout = composedProgram->getLayout()->getGlobalParamsTypeLayout();
+        else
+            globalVarLayout = module->getLayout()->getGlobalParamsTypeLayout();
+
+        auto globalParamsFieldCount = globalVarLayout->getFieldCount();
+
+        for (int paramIdx = 0; paramIdx < globalParamsFieldCount; paramIdx++)
+        {
+            auto varLayout = globalVarLayout->getFieldByIndex(paramIdx);
+
+            if (strcmp(varLayout->getName(), "refl_MaterialParameters"))
+                continue;
+
+            auto typeLayout = varLayout->getTypeLayout();
+
+            if (typeLayout->getKind() != slang::TypeReflection::Kind::ConstantBuffer)
+                return std::optional<std::vector<KE::VK::StructMember>>();
+
+
+            auto matParamLayout = typeLayout->getElementTypeLayout();
+
+            int matParamCount = matParamLayout->getFieldCount();
+
+            for (int matParamIdx = 0; matParamIdx < matParamCount; matParamIdx++)
+            {
+                auto        matParam = matParamLayout->getFieldByIndex(matParamIdx);
+                u32         offset   = matParam->getOffset();
+                std::string name     = matParam->getName();
+
+                // auto testKind = matParam->getType()->getElementType()->getName();
+
+                std::string typeString;
+                if (matParam->getType()->getKind() == slang::TypeReflection::Kind::Vector)
+                {
+                    typeString = matParam->getTypeLayout()->getElementTypeLayout()->getName() +
+                                 std::to_string(matParam->getTypeLayout()->getElementCount());
+                }
+                else
+                {
+                    typeString = matParam->getType()->getName();
+                }
+                result.push_back({.name = name, .type = typeString, .offset = offset});
+            }
+        }
+
+        return result;
+    }
+
+    std::optional<std::vector<KE::VK::CompileTimeConstant>> GetCompileTimeConstantReflection()
+    {
+        std::vector<KE::VK::CompileTimeConstant> result;
+        int                                      constantCount = module->getModuleReflection()->getChildrenCount();
+
+        for (int i = 0; i < constantCount; i++)
         {
             auto decl = module->getModuleReflection()->getChild(i);
 
-            if(decl->getKind() != slang::DeclReflection::Kind::Variable) continue;
 
-            slang::VariableReflection *var = decl->asVariable();
-            if(var == nullptr || !var->findModifier(slang::Modifier::Extern)) continue;
+            if (decl->getKind() != slang::DeclReflection::Kind::Variable)
+                continue;
+
+            slang::VariableReflection* var = decl->asVariable();
+
+
+            if (var == nullptr || !var->findModifier(slang::Modifier::Extern))
+                continue;
 
             i64 defaultValue;
 
@@ -242,30 +316,154 @@ class SlangCompiledUnit
 
             int min = -1, max = -1;
 
-            for(int attributeIdx = 0; attributeIdx < var->getUserAttributeCount(); attributeIdx++)
+            for (int attributeIdx = 0; attributeIdx < var->getUserAttributeCount(); attributeIdx++)
             {
                 auto attribute = var->getUserAttributeByIndex(attributeIdx);
 
                 std::string attributeName = attribute->getName();
-                if(!strcmp(attribute->getName(),"ConstantRange"))
+                if (!strcmp(attribute->getName(), "ConstantRange"))
                 {
                     attribute->getArgumentValueInt(0, &min);
                     attribute->getArgumentValueInt(1, &max);
                 }
             }
-            
 
-            result.push_back(
-                {
-                    .name = var->getName(),
-                    .def  = (i32)defaultValue,
-                    .min = min,
-                    .max = max
-                }
-            );
+
+            result.push_back({.name = var->getName(), .def = (i32)defaultValue, .min = min, .max = max});
         }
 
         return result;
+    }
+
+    KE::VK::SpecializedShader Specialise(
+        Slang::ComPtr<slang::ISession>                session        = nullptr,
+        std::vector<KE::VK::CompileTimeConstantValue> constantValues = std::vector<KE::VK::CompileTimeConstantValue>())
+    {
+        KE::VK::SpecializedShader specialisedShader;
+
+        auto compileTimeConstantsAvailable = GetCompileTimeConstantReflection();
+
+
+        std::vector<KE::VK::CompileTimeConstantValue> defaultCompileTimeConstantValues;
+
+        if (compileTimeConstantsAvailable.has_value())
+        {
+            std::sort(compileTimeConstantsAvailable.value().begin(), compileTimeConstantsAvailable.value().end(),
+                      [](const KE::VK::CompileTimeConstant& a, const KE::VK::CompileTimeConstant& b)
+                      { return a.name < b.name; });
+
+            for (auto& constant : compileTimeConstantsAvailable.value())
+            {
+                defaultCompileTimeConstantValues.push_back({.name = constant.name, .value = constant.def});
+            }
+        }
+
+
+        SlangCompiledUnit* unit;
+        if (constantValues.size() == 0)
+        {
+            unit = this;
+        }
+        else
+        {
+            // sort first. This makes the hash of the constant values and the path consistent. Although I'd expect
+            // tooling to keep it sorted. Easier for manual material edits though.
+            std::sort(constantValues.begin(), constantValues.end(),
+                      [](const KE::VK::CompileTimeConstantValue& a, const KE::VK::CompileTimeConstantValue& b)
+                      { return a.name < b.name; });
+
+
+            i32 defaultsIndex        = 0;
+            i32 passedConstantsIndex = 0;
+
+            while (defaultsIndex < defaultCompileTimeConstantValues.size() &&
+                   passedConstantsIndex < constantValues.size())
+            {
+                if (constantValues[passedConstantsIndex].name == defaultCompileTimeConstantValues[defaultsIndex].name)
+                {
+                    auto val = constantValues[passedConstantsIndex].value;
+                    auto min = compileTimeConstantsAvailable.value()[defaultsIndex].min;
+                    auto max = compileTimeConstantsAvailable.value()[defaultsIndex].max;
+                    i32  clamped;
+
+                    if (clamped = std::clamp(val, min, max); val != clamped)
+                    {
+                        std::cout << "Shader Specialisation: passed constant value not in range!"
+                                  << std::endl; // we would throw a warning here;
+                    }
+                    defaultCompileTimeConstantValues[defaultsIndex].value = clamped;
+
+                    passedConstantsIndex++;
+                }
+                defaultsIndex++;
+
+
+                if (defaultsIndex + 1 == defaultCompileTimeConstantValues.size() &&
+                    passedConstantsIndex < constantValues.size())
+                {
+                    throw std::logic_error("Passed constant(s) have no equivalent in the shader!");
+                }
+            }
+
+
+            std::string specialisationModuleString;
+            for (auto& constantValue : defaultCompileTimeConstantValues)
+            {
+                specialisationModuleString += "export static const int ";
+                specialisationModuleString += constantValue.name;
+                specialisationModuleString += " = ";
+                specialisationModuleString += std::to_string(constantValue.value);
+                specialisationModuleString += ";\n";
+            }
+
+            Slang::ComPtr<slang::IComponentType> specialisedProgram;
+
+            Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+
+            std::array<slang::IComponentType*, 2> componentTypes;
+
+
+            Slang::ComPtr<slang::IModule> specialisationModule;
+            specialisationModule = session->loadModuleFromSourceString(specialisationModuleString.c_str(), nullptr,
+                                                                       specialisationModuleString.c_str());
+
+            componentTypes[0] = module;
+            componentTypes[1] = specialisationModule;
+
+            session->createCompositeComponentType(componentTypes.data(), componentTypes.size(),
+                                                  specialisedProgram.writeRef(), diagnosticsBlob.writeRef());
+
+            unit = new SlangCompiledUnit(specialisedProgram);
+        }
+
+
+        if (auto vertexInputs = unit->GetVertexInputReflection(); vertexInputs.has_value())
+        {
+            specialisedShader.vertexInputs = vertexInputs.value();
+        }
+        if (auto pushConstantRefl = unit->GetPushConstantReflection(); pushConstantRefl.has_value())
+        {
+            specialisedShader.pushConstants = pushConstantRefl.value();
+        }
+        if (auto materialRefl = unit->GetMaterialParameterReflection(); materialRefl.has_value())
+        {
+            specialisedShader.materialParameters = unit->GetMaterialParameterReflection().value();
+        }
+
+        specialisedShader.compileTimeConstants = defaultCompileTimeConstantValues;
+
+        auto spirvBlob = unit->getTargetCode();
+
+        specialisedShader.spirv.resize(spirvBlob->getBufferSize() / 4);
+
+        std::memcpy(specialisedShader.spirv.data(), spirvBlob->getBufferPointer(), spirvBlob->getBufferSize());
+
+        if (constantValues.size() != 0)
+        {
+            delete unit;
+        }
+
+        return specialisedShader;
     }
 
     // uses reflection to provide the correct descriptor set layout
