@@ -158,6 +158,7 @@ class SlangCompiledUnit
             break;
         default:    
             // TODO: We need to handle errors like this. We need to tell the programmer that their format is unsupported
+            break;
         }
 
         int elementCount = std::max((size_t)1, typeRefl->getElementCount());

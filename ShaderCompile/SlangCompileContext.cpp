@@ -1,5 +1,8 @@
 #include "SlangCompileContext.h"
 
+#include <stdexcept>
+#include <string>
+
 KE::VK::SlangCompileContext::SlangCompileContext()
 {
     createGlobalSession(globalSession.writeRef());
@@ -43,8 +46,9 @@ KE::VK::SlangCompileContext::SlangCompileContext()
          },
          {// Hardcoded for now. This might not play nicely with AMD GPUs, which is a bit annoying. If it becomes a
           // serious issue we might have to make it a spirv specialisation constant.
+          // TEMP: 64 instead of 32 so it runs on Intel (ANV resource descriptors are 64 bytes). Should be clamped from the device.
           slang::CompilerOptionName::SPIRVResourceHeapStride,
-          {slang::CompilerOptionValueKind::Int, 32, 0, nullptr, nullptr}
+          {slang::CompilerOptionValueKind::Int, 64, 0, nullptr, nullptr}
 
          },
          {slang::CompilerOptionName::DebugInformation, {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}}}};
@@ -69,7 +73,12 @@ SlangCompiledUnit KE::VK::SlangCompileContext::CompileShaderPath(const char* pat
         diagnosticsBlob.writeRef()); // loadModuleFromSourceString(0, 0, shaderSource, diagnosticsBlob.writeRef());
     diagnoseIfNeeded(diagnosticsBlob);
 
-    
+    if (!shaderModule)
+    {
+        // paths are relative to the working directory, i.e. the bin folder
+        throw std::runtime_error(std::string("Failed to load shader module: ") + path);
+    }
+
     return SlangCompiledUnit(shaderModule);
 
     Slang::ComPtr<slang::IComponentType> composedProgram;

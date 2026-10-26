@@ -17,20 +17,8 @@ set_target_properties(GpuInterface PROPERTIES
 
 target_link_libraries(GpuInterface PUBLIC SDL3::SDL3)
 
-target_link_libraries(GpuInterface PRIVATE
-    $<$<CONFIG:Debug>:$ENV{VULKAN_SDK}/Lib/shaderc_combinedd.lib>
-    $<$<CONFIG:Release>:$ENV{VULKAN_SDK}/Lib/shaderc_combined.lib>
-)
-
-set(Vulkan_LIBRARY "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
-set(Vulkan_INCLUDE_DIR "$ENV{VULKAN_SDK}/Include")
-find_package(Vulkan REQUIRED)
-
-message(STATUS "Vulkan_FOUND: ${Vulkan_FOUND}")
-message(STATUS "Vulkan_INCLUDE_DIRS: ${Vulkan_INCLUDE_DIRS}")
-message(STATUS "Vulkan_LIBRARIES: ${Vulkan_LIBRARIES}")
-
-target_link_libraries(GpuInterface PUBLIC ${Vulkan_LIBRARIES} vk-bootstrap::vk-bootstrap slang::slang)
+#Vulkan is found in the engine root CMakeLists
+target_link_libraries(GpuInterface PUBLIC Vulkan::Vulkan vk-bootstrap::vk-bootstrap slang::slang)
 
 
 

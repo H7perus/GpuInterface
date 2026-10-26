@@ -2,6 +2,8 @@
 #include "DescriptorHeapBuffer.h"
 
 #include "DeviceManager.h"
+
+#include <stdexcept>
 using namespace KE::VK;
 
 DescriptorHeapBuffer::DescriptorHeapBuffer(const u32 deviceIndex, i32 descriptorCount, DescriptorHeapType heapType)
@@ -23,7 +25,8 @@ DescriptorHeapBuffer::DescriptorHeapBuffer(const u32 deviceIndex, i32 descriptor
     }
     else
     {
-        throw new std::exception(
+        //std::exception(const char*) is an MSVC extension
+        throw std::logic_error(
             "There are only two types of descriptor heaps and you doofus somehow managed to fuck it up");
     }
 

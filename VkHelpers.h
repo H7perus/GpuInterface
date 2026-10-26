@@ -80,9 +80,11 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst, vk::SurfaceKHR surface)
                                                .add_required_extension("VK_EXT_descriptor_heap")
                                                .add_required_extension("VK_KHR_shader_untyped_pointers")
                                                .add_required_extension("VK_EXT_vertex_input_dynamic_state")
-                                               .add_required_extension("VK_NV_cooperative_vector")
+                                               //NV only. Commented out until the cross vendor coop vec extension lands.
+                                               //.add_required_extension("VK_NV_cooperative_vector")
                                                .add_required_extension("VK_EXT_shader_atomic_float")
-                                               .add_required_extension("VK_EXT_device_fault")
+                                               //not supported on Intel (Mesa ANV)
+                                               //.add_required_extension("VK_EXT_device_fault")
                                                .add_required_extension("VK_EXT_shader_replicated_composites")
                                                .set_minimum_version(1, 4)
                                                .require_present(true)
@@ -119,14 +121,15 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst, vk::SurfaceKHR surface)
     features11.storageBuffer16BitAccess           = VK_TRUE;
 
 
-    vk::PhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeatures;
-    cooperativeVectorFeatures.cooperativeVector         = VK_TRUE;
-    cooperativeVectorFeatures.cooperativeVectorTraining = VK_TRUE;
+    //vk::PhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeatures;
+    //cooperativeVectorFeatures.cooperativeVector         = VK_TRUE;
+    //cooperativeVectorFeatures.cooperativeVectorTraining = VK_TRUE;
 
-    vk::PhysicalDeviceShaderAtomicFloat2FeaturesEXT float2feat;
-    
-    float2feat.shaderBufferFloat16AtomicAdd = VK_TRUE;
-    float2feat.shaderSharedFloat16AtomicAdd = VK_TRUE;
+    //float16 atomics aren't supported on Intel (Mesa ANV). Also belongs to VK_EXT_shader_atomic_float2, which was never enabled.
+    //vk::PhysicalDeviceShaderAtomicFloat2FeaturesEXT float2feat;
+    //
+    //float2feat.shaderBufferFloat16AtomicAdd = VK_TRUE;
+    //float2feat.shaderSharedFloat16AtomicAdd = VK_TRUE;
 
     vk::PhysicalDeviceShaderReplicatedCompositesFeaturesEXT compFeatEXT;
     compFeatEXT.shaderReplicatedComposites = true;
@@ -139,8 +142,8 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst, vk::SurfaceKHR surface)
                                      .add_pNext(&descHeapFeatures)
                                      .add_pNext(&untypedPtrFeatures) // also need this one
                                      .add_pNext(&vertexInputDynamicStateFeat)
-                                     .add_pNext(&cooperativeVectorFeatures)
-                                     .add_pNext(&float2feat)
+                                     //.add_pNext(&cooperativeVectorFeatures)
+                                     //.add_pNext(&float2feat)
                                      .add_pNext(&compFeatEXT)
                                      //.enable_extension("VK_EXT_descriptor_heap")
                                      //.enable_extension("VK_KHR_shader_untyped_pointers")
@@ -165,7 +168,7 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst)
                                                .add_required_extension("VK_EXT_descriptor_heap")
                                                .add_required_extension("VK_KHR_shader_untyped_pointers")
                                                .add_required_extension("VK_EXT_vertex_input_dynamic_state")
-                                               .add_required_extension("VK_NV_cooperative_vector")
+                                               //.add_required_extension("VK_NV_cooperative_vector") //NV only, see above
                                                .set_minimum_version(1, 4)
                                                .defer_surface_initialization()
                                                .select();
@@ -201,8 +204,8 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst)
     untypedPtrFeatures.shaderUntypedPointers = true;
 
 
-    vk::PhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeatures;
-    cooperativeVectorFeatures.cooperativeVector = true;
+    //vk::PhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeatures;
+    //cooperativeVectorFeatures.cooperativeVector = true;
 
 
     vk::PhysicalDevice16BitStorageFeatures storageBuffer16BitStorageFeatures;
@@ -215,7 +218,7 @@ inline vkb::Device createDevice(vkb::Instance vkb_inst)
                                      .add_pNext(&descHeapFeatures)
                                      .add_pNext(&untypedPtrFeatures) // also need this one
                                      .add_pNext(&vertexInputDynamicStateFeat)
-                                     .add_pNext(&cooperativeVectorFeatures)
+                                     //.add_pNext(&cooperativeVectorFeatures)
                                      .add_pNext(&storageBuffer16BitStorageFeatures)
                                      //.enable_extension("VK_EXT_descriptor_heap")
                                      //.enable_extension("VK_KHR_shader_untyped_pointers")

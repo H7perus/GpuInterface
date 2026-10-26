@@ -26,8 +26,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 #include "ShaderCompile/SlangCompileContext.h"
 #include "ShaderCompile/SlangCompiledUnit.h"
 
-#include "ShaderCompile/GlslShaderCompile.h"
-
+#include <fstream>
 #include <string>
 
 
@@ -78,17 +77,10 @@ void KE::VkGpuInterface::Init()
 
     Slang::ComPtr<slang::IBlob> blob = slangGraphicsShader.getTargetCode();
 
-    auto glslComputeSpv =
-        CompileGlslShader("../../../../../Engine/src/GpuInterface/shaders/glslcompute.comp", shaderc_compute_shader);
     std::ofstream file("spvDescriptorHeapTEST2.spv", std::ios::binary);
     file.write((char*)blob.get()->getBufferPointer(), blob.get()->getBufferSize());
     file.close();
 
-
-    auto vertTest =
-        CompileGlslShader("../../../../../Engine/src/GpuInterface/shaders/glsl.vert", shaderc_vertex_shader);
-    auto fragTest =
-        CompileGlslShader("../../../../../Engine/src/GpuInterface/shaders/glsl.frag", shaderc_fragment_shader);
 
     KE::VK::PipelineCompute pipeline(0, slangShader);
 

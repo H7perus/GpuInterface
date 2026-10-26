@@ -58,8 +58,8 @@ KE::VK::PipelineCompute::PipelineCompute(u32 deviceIndex, SlangCompiledUnit shad
     mapping.resourceMask              = vk::SpirvResourceTypeFlagBitsEXT::eAll;
     mapping.source                    = vk::DescriptorMappingSourceEXT::eHeapWithConstantOffset;
     mapping.sourceData.constantOffset = {
-        .heapOffset      = 3024 * 32, // byte offset of binding 0 in the heap
-        .heapArrayStride = 32         // each subsequent binding steps by this
+        .heapOffset      = 3024 * 64, // byte offset of binding 0 in the heap. TEMP: 64 = ANV resource descriptor size, should come from the device
+        .heapArrayStride = 64         // each subsequent binding steps by this
     };
 
     vk::ShaderDescriptorSetAndBindingMappingInfoEXT mappingInfo;

@@ -13,3 +13,6 @@ GpuInterface.vcxproj.filters
 CMakeFiles/generate.stamp.depend
 
 cmake_install.cmake
+
+# in-source CMake build dirs (engine adds this as add_subdirectory(src/GpuInterface src/GpuInterface))
+CMakeFiles/
