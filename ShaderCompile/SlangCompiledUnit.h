@@ -156,7 +156,7 @@ class SlangCompiledUnit
         case slang::TypeReflection::Int32:
             format = vk::Format::eR32Sint;
             break;
-        default:
+        default:    
             // TODO: We need to handle errors like this. We need to tell the programmer that their format is unsupported
         }
 
@@ -272,8 +272,6 @@ class SlangCompiledUnit
                 u32         offset   = matParam->getOffset();
                 std::string name     = matParam->getName();
 
-                // auto testKind = matParam->getType()->getElementType()->getName();
-
                 std::string typeString;
                 if (matParam->getType()->getKind() == slang::TypeReflection::Kind::Vector)
                 {
@@ -300,6 +298,7 @@ class SlangCompiledUnit
         {
             auto decl = module->getModuleReflection()->getChild(i);
 
+            auto kind = decl->getKind();
 
             if (decl->getKind() != slang::DeclReflection::Kind::Variable)
                 continue;

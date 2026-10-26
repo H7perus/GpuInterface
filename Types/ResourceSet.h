@@ -29,8 +29,19 @@ struct ResourceSetDesc
 };
 
 
-// TODO: Is templatisation + pointers faster? We are deciding on behavior at runtime rn
-class ResourceSet
+class IResourceSet
+{
+  public:
+    virtual ~IResourceSet() = default;
+
+    virtual void SetCurrent(u32 index)  = 0;
+    virtual u32  GetSize() const        = 0;
+    virtual ResourceHandle GetResourceHandle() = 0;
+};
+
+
+template <std::derived_from<IResource> T>
+class ResourceSet final : public IResourceSet
 {
     std::vector<std::shared_ptr<IResource>> resources_;
     // This is a constant memory address, meaning that we can just point a vk::DescriptorWriteSet at it
@@ -40,23 +51,23 @@ class ResourceSet
     u8               curr_index_ = 0;
 
   public:
+
     ResourceSet() = default;
 
-    template <std::derived_from<IResource> T> static ResourceSet Create(ResourceSetDesc desc, auto&&... args)
+    ResourceSet(ResourceSetDesc desc, auto&&... args)
     {
-        ResourceSet set;
 
-        set.usage_ = desc.usage;
+        usage_ = desc.usage;
         if (desc.usage == STATIC)
         {
-            set.resources_.push_back(std::make_shared<T>(std::forward<decltype(args)>(args)...));
-            *set.current_ = set.resources_[0];
+            resources_.push_back(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+            *current_ = resources_[0];
         }
         else if (desc.usage == FLIP)
         {
-            set.resources_.push_back(std::make_shared<T>(std::forward<decltype(args)>(args)...));
-            set.resources_.push_back(std::make_shared<T>(std::forward<decltype(args)>(args)...));
-            *set.current_ = set.resources_[0];
+            resources_.push_back(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+            resources_.push_back(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+            *current_ = resources_[0];
         }
         else if (desc.usage == FRAMEALIGNED)
         {
@@ -64,12 +75,11 @@ class ResourceSet
 
             for (u32 i = 0; i < desc.numFramesInFlight; i++)
             {
-                set.resources_.push_back(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+                resources_.push_back(std::make_shared<T>(std::forward<decltype(args)>(args)...));
             }
-            *set.current_ = set.resources_[0];
+            *current_ = resources_[0];
         }
-        return set;
-    }
+    };
 
     void SetCurrent(u32 index)
     {
@@ -77,7 +87,7 @@ class ResourceSet
         *current_   = resources_[index];
     }
 
-    template <std::derived_from<IResource> T> void SetNthResource(u32 index, T resource)
+    void SetNthResource(u32 index, T resource)
     {
         assert(resources_[0]->GetTypeID() == T::GetStaticTypeID() &&
                "Resource type mismatch in ResourceSet::SetNthResource");

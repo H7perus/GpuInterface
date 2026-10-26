@@ -33,7 +33,7 @@ namespace KE::VK
         std::vector<vk::Image>     images_;
         std::vector<vk::ImageView> imageViews_;
 
-        ResourceSet swapchainOutputSet_;
+        ResourceSet<SwapchainOutput> swapchainOutputSet_;
 
 
         Swapchain() = default;

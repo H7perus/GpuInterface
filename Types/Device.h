@@ -49,7 +49,7 @@ class GPUI_DLL_API Device
     vk::PhysicalDeviceDescriptorHeapPropertiesEXT heapProperties_;
     QueueFamilyIndices                            queueFamilyIndices_;
 
-    std::map<std::string, shared_ptr<KE::VK::ResourceSet>> namedResources_;
+    std::map<std::string, shared_ptr<KE::VK::IResourceSet>> namedResources_;
 
     DescriptorHeapBuffer resourceHeap_ = DescriptorHeapBuffer();
     DescriptorHeapBuffer samplerHeap_  = DescriptorHeapBuffer();
@@ -66,9 +66,9 @@ class GPUI_DLL_API Device
     vk::PhysicalDevice GetVkPhysicalDevice();
 
 
-    template <std::derived_from<IResource> T> ResourceSet CreateResource(auto&&... args)
+    template <std::derived_from<IResource> T> ResourceSet<T> CreateResource(ResourceSetDesc desc, auto&&... args)
     {
-        return ResourceSet::Create<T>(deviceIndex_, std::forward<decltype(args)>(args)...);
+        return ResourceSet<T>(desc, deviceIndex_, std::forward<decltype(args)>(args)...);
     }
 
     u32 FindMemoryType(u32 typeFilter, vk::MemoryPropertyFlags properties) const;
