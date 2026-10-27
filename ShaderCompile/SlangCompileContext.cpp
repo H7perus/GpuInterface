@@ -1,10 +1,14 @@
 #include "SlangCompileContext.h"
 
+#include "GpuInterface/Types/DeviceManager.h"
+
 #include <stdexcept>
 #include <string>
 
-KE::VK::SlangCompileContext::SlangCompileContext()
+KE::VK::SlangCompileContext::SlangCompileContext(u32 deviceIndex)
 {
+    const int resourceHeapStride = int(ContextManager::GetDevice(deviceIndex).GetResourceDescriptorStride());
+
     createGlobalSession(globalSession.writeRef());
 
     // Assumption: SPIR-V only!
@@ -44,11 +48,10 @@ KE::VK::SlangCompileContext::SlangCompileContext()
           {slang::CompilerOptionValueKind::String, 1, 0, "spvDescriptorHeapEXT", nullptr}
 
          },
-         {// Hardcoded for now. This might not play nicely with AMD GPUs, which is a bit annoying. If it becomes a
-          // serious issue we might have to make it a spirv specialisation constant.
-          // TEMP: 64 instead of 32 so it runs on Intel (ANV resource descriptors are 64 bytes). Should be clamped from the device.
+         {// Must match the slot size DescriptorHeapBuffer fills the resource heap with. The sampler heap needs no
+          // explicit stride: Slang's default (OpConstantSizeOfEXT(Sampler)) already is the device's sampler size.
           slang::CompilerOptionName::SPIRVResourceHeapStride,
-          {slang::CompilerOptionValueKind::Int, 64, 0, nullptr, nullptr}
+          {slang::CompilerOptionValueKind::Int, resourceHeapStride, 0, nullptr, nullptr}
 
          },
          {slang::CompilerOptionName::DebugInformation, {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}}}};

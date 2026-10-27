@@ -50,30 +50,9 @@ KE::VK::PipelineCompute::PipelineCompute(u32 deviceIndex, SlangCompiledUnit shad
     vk::PipelineCreateFlags2CreateInfo flags2Info;
     flags2Info.flags = vk::PipelineCreateFlagBits2::eDescriptorHeapEXT;
 
-    // MAPPINGS, SO I CAN USE DESCRIPTOR HEAPS WITH NEURAL INFERENCE
-    vk::DescriptorSetAndBindingMappingEXT mapping;
-    mapping.descriptorSet             = 0;
-    mapping.firstBinding              = 0;
-    mapping.bindingCount              = 10;
-    mapping.resourceMask              = vk::SpirvResourceTypeFlagBitsEXT::eAll;
-    mapping.source                    = vk::DescriptorMappingSourceEXT::eHeapWithConstantOffset;
-    mapping.sourceData.constantOffset = {
-        .heapOffset      = 3024 * 64, // byte offset of binding 0 in the heap. TEMP: 64 = ANV resource descriptor size, should come from the device
-        .heapArrayStride = 64         // each subsequent binding steps by this
-    };
-
-    vk::ShaderDescriptorSetAndBindingMappingInfoEXT mappingInfo;
-    mappingInfo.pNext        = nullptr;
-    mappingInfo.mappingCount = 1;
-    mappingInfo.pMappings    = &mapping;
-
-
-    //MAPPINGS END!
-
     vk::ComputePipelineCreateInfo pipelineInfo;
     pipelineInfo.pNext       = &flags2Info;
     pipelineInfo.stage       = shaderStageInfo;
-    pipelineInfo.stage.pNext = &mappingInfo;
     pipelineInfo.layout      = VK_NULL_HANDLE; // from previous step
 
 

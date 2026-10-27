@@ -11,6 +11,7 @@
 #include "vulkan/vulkan.hpp"
 
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <optional>
@@ -89,9 +90,13 @@ class GPUI_DLL_API Device
         return heapProperties_.minResourceHeapReservedRange;
     }
 
+    // Buffers and images share one resource heap and one index space, so every slot has to fit the larger of the two
+    // descriptor sizes, rounded up so each slot also starts aligned.
     i64 GetResourceDescriptorStride() const
     {
-        return (heapProperties_.bufferDescriptorAlignment > heapProperties_.imageDescriptorAlignment) ? heapProperties_.bufferDescriptorAlignment : heapProperties_.imageDescriptorAlignment;
+        i64 size      = std::max(heapProperties_.bufferDescriptorSize, heapProperties_.imageDescriptorSize);
+        i64 alignment = std::max(heapProperties_.bufferDescriptorAlignment, heapProperties_.imageDescriptorAlignment);
+        return (size + alignment - 1) / alignment * alignment;
     }
 
     i64 GetBufferDescriptorSize() const

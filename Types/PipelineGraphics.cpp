@@ -71,26 +71,6 @@ PipelineGraphics::PipelineGraphics(u32 deviceIndex, SpecializedShader& shader)
 
     vk::PipelineVertexInputStateCreateInfo emptyVertexInput{};
 
-    // MAPPINGS, SO I CAN USE DESCRIPTOR HEAPS WITH NEURAL INFERENCE
-    vk::DescriptorSetAndBindingMappingEXT mapping;
-    mapping.descriptorSet             = 0;
-    mapping.firstBinding              = 0;
-    mapping.bindingCount              = 10;
-    mapping.resourceMask              = vk::SpirvResourceTypeFlagBitsEXT::eAll;
-    mapping.source                    = vk::DescriptorMappingSourceEXT::eHeapWithConstantOffset;
-    mapping.sourceData.constantOffset = {
-        .heapOffset      = 3024 * 64, // byte offset of binding 0 in the heap. TEMP: 64 = ANV resource descriptor size, should come from the device
-        .heapArrayStride = 64         // each subsequent binding steps by this
-    };
-
-    vk::ShaderDescriptorSetAndBindingMappingInfoEXT mappingInfo;
-    mappingInfo.pNext        = nullptr;
-    mappingInfo.mappingCount = 1;
-    mappingInfo.pMappings    = &mapping;
-
-    shaderStages[0].pNext = &mappingInfo;
-    shaderStages[1].pNext = &mappingInfo;
-
     vk::GraphicsPipelineCreateInfo pipelineInfo;
     pipelineInfo.pNext = &renderingCreateInfo;
     pipelineInfo.stageCount = 2;
@@ -173,26 +153,6 @@ PipelineGraphics::PipelineGraphics(u32 deviceIndex, std::vector<uint32_t> vertSp
     colorBlending.logicOpEnable   = VK_FALSE;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments    = &blendAttachment;
-
-    // MAPPINGS, SO I CAN USE DESCRIPTOR HEAPS WITH NEURAL INFERENCE
-    vk::DescriptorSetAndBindingMappingEXT mapping;
-    mapping.descriptorSet             = 0;
-    mapping.firstBinding              = 0;
-    mapping.bindingCount              = 5;
-    mapping.resourceMask              = vk::SpirvResourceTypeFlagBitsEXT::eAll;
-    mapping.source                    = vk::DescriptorMappingSourceEXT::eHeapWithConstantOffset;
-    mapping.sourceData.constantOffset = {
-        .heapOffset      = 3024 * 64, // byte offset of binding 0 in the heap. TEMP: 64 = ANV resource descriptor size, should come from the device
-        .heapArrayStride = 64         // each subsequent binding steps by this
-    };
-
-    vk::ShaderDescriptorSetAndBindingMappingInfoEXT mappingInfo;
-    mappingInfo.pNext        = nullptr;
-    mappingInfo.mappingCount = 1;
-    mappingInfo.pMappings    = &mapping;
-
-    shaderStages[0].pNext = &mappingInfo;
-    shaderStages[1].pNext = &mappingInfo;
 
     vk::GraphicsPipelineCreateInfo pipelineInfo;
     pipelineInfo.pNext               = &renderingCreateInfo;

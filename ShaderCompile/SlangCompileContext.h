@@ -32,7 +32,9 @@ class GPUI_DLL_API SlangCompileContext
     Slang::ComPtr<slang::IBlob> diagnosticsBlob;
 
   public:
-    SlangCompileContext();
+    // The resource heap stride baked into the SPIR-V comes from this device, so shaders index the heap the same way
+    // the CPU fills it.
+    explicit SlangCompileContext(u32 deviceIndex = 0);
 
     void LoadModule(char* modulecode)
     {
